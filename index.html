@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt-Bibliothek</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --surface: #ffffff; --text: #1d1d1b; --muted: #6b6b66;
+    --border: #e3e3de; --accent: #3b5bdb; --accent-soft: #e7ecff; --var: #fff3bf; --var-text: #5c4400;
+    --star: #e8a400;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141413; --surface: #1e1e1c; --text: #ededea; --muted: #9a9a94;
+      --border: #33332f; --accent: #8ea4ff; --accent-soft: #252c48; --var: #4a3c0a; --var-text: #ffe8a3; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  .top { display: flex; align-items: baseline; gap: 12px; padding-top: 18px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0; }
+  .count { color: var(--muted); font-size: 14px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 0 14px; }
+  input[type=search] { flex: 1 1 260px; min-width: 0; padding: 10px 12px; font: inherit; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .chip { padding: 8px 12px; font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .chip[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  main { padding: 18px 0 40px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+    cursor: pointer; display: flex; flex-direction: column; gap: 6px; text-align: left; font: inherit; color: inherit; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
+  .card h2 { font-size: 15px; margin: 0; display: flex; gap: 6px; align-items: start; }
+  .card h2 span.title { flex: 1; }
+  .card p { margin: 0; color: var(--muted); font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 11.5px; padding: 1px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+  .star { color: var(--star); }
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+  #sentinel { height: 1px; }
+  dialog { width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; border: 1px solid var(--border);
+    border-radius: 12px; background: var(--surface); color: var(--text); }
+  dialog::backdrop { background: rgb(0 0 0 / .45); }
+  .dlg { display: flex; flex-direction: column; max-height: calc(100vh - 50px); }
+  .dlg-head { display: flex; gap: 8px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .dlg-head h2 { flex: 1; margin: 0; font-size: 18px; }
+  .dlg-body { padding: 16px; overflow: auto; }
+  .vars { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .vars label { font-size: 12.5px; color: var(--muted); display: flex; flex-direction: column; gap: 3px; }
+  .vars input { padding: 7px 9px; font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; }
+  pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 13.5px/1.55 ui-monospace, Menlo, Consolas, monospace;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  mark { background: var(--var); color: var(--var-text); border-radius: 3px; padding: 0 2px; }
+  .dlg-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .btn { padding: 8px 14px; font: inherit; font-size: 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  @media (prefers-color-scheme: dark) { .btn.primary { color: #10131f; } }
+  .icon-btn { border: 0; background: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 2px 6px; line-height: 1; }
+  .icon-btn.on { color: var(--star); }
+  footer { color: var(--muted); font-size: 13px; padding: 0 0 30px; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <h1>Prompt-Bibliothek</h1>
+      <span class="count" id="count">Lade Prompts …</span>
+    </div>
+    <div class="controls" role="toolbar" aria-label="Filter">
+      <input type="search" id="q" placeholder="Suchen (Titel oder Inhalt) …" autocomplete="off" aria-label="Suche">
+      <button class="chip" data-type="" aria-pressed="true">Alle</button>
+      <button class="chip" data-type="TEXT" aria-pressed="false">Text</button>
+      <button class="chip" data-type="STRUCTURED" aria-pressed="false">Strukturiert</button>
+      <button class="chip" data-type="IMAGE" aria-pressed="false">Bild</button>
+      <button class="chip" id="devs" aria-pressed="false">Für Entwickler</button>
+      <button class="chip" id="favs" aria-pressed="false">★ Favoriten</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>Keine Prompts gefunden.</div>
+  <div id="sentinel"></div>
+</main>
+
+<footer class="wrap">
+  Inhalte: <a href="https://github.com/f/prompts.chat">prompts.chat</a> (CC0 1.0, Public Domain).
+  Platzhalter wie <code>${thema}</code> lassen sich vor dem Kopieren ausfüllen.
+</footer>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dlg">
+    <div class="dlg-head">
+      <h2 id="dlg-title"></h2>
+      <button class="icon-btn" id="dlg-fav" aria-label="Als Favorit markieren">☆</button>
+      <button class="icon-btn" id="dlg-close" aria-label="Schließen">×</button>
+    </div>
+    <div class="dlg-body">
+      <div class="badges" id="dlg-badges" style="margin-bottom:12px"></div>
+      <div class="vars" id="dlg-vars"></div>
+      <pre id="dlg-text"></pre>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn" id="dlg-chatgpt">In ChatGPT öffnen</button>
+      <button class="btn" id="dlg-claude">In Claude öffnen</button>
+      <button class="btn primary" id="dlg-copy">Kopieren</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="data/prompts.js"></script>
+<script>
+(() => {
+  const PAGE = 60;
+  const TYPE_LABEL = { TEXT: "Text", STRUCTURED: "Strukturiert", IMAGE: "Bild" };
+  const all = (window.PROMPTS || []).map((p, i) => ({ ...p, id: i, hay: (p.t + "\n" + p.p).toLowerCase() }));
+  const $ = (id) => document.getElementById(id);
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+  const favs = new Set(store.get("pb-favs", []));
+  const saveFavs = () => store.set("pb-favs", [...favs]);
+
+  const state = { q: "", type: "", devs: false, favs: false };
+  let results = [], shown = 0, current = null;
+
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const VAR_RE = /\$\{([^}:]+)(?::([^}]*))?\}/g;
+
+  function filter() {
+    const terms = state.q.toLowerCase().split(/\s+/).filter(Boolean);
+    results = all.filter((p) =>
+      (!state.type || p.k === state.type) &&
+      (!state.devs || p.d) &&
+      (!state.favs || favs.has(p.t)) &&
+      terms.every((t) => p.hay.includes(t)));
+    if (terms.length) {
+      // Treffer im Titel zuerst
+      results.sort((a, b) => {
+        const at = terms.every((t) => a.t.toLowerCase().includes(t)), bt = terms.every((t) => b.t.toLowerCase().includes(t));
+        return (bt - at) || a.id - b.id;
+      });
+    }
+    $("grid").innerHTML = "";
+    shown = 0;
+    $("count").textContent = `${results.length.toLocaleString("de-DE")} von ${all.length.toLocaleString("de-DE")} Prompts`;
+    $("empty").hidden = results.length > 0;
+    more();
+  }
+
+  function badges(p) {
+    let h = `<span class="badge">${TYPE_LABEL[p.k] || p.k}</span>`;
+    if (p.d) h += `<span class="badge">Entwickler</span>`;
+    if (VAR_RE.test(p.p)) h += `<span class="badge">Platzhalter</span>`;
+    VAR_RE.lastIndex = 0;
+    return h;
+  }
+
+  function more() {
+    const frag = document.createDocumentFragment();
+    for (const p of results.slice(shown, shown + PAGE)) {
+      const b = document.createElement("button");
+      b.className = "card";
+      b.innerHTML = `<h2><span class="title">${esc(p.t)}</span>${favs.has(p.t) ? '<span class="star">★</span>' : ""}</h2>
+        <p>${esc(p.p.slice(0, 300))}</p><div class="badges">${badges(p)}</div>`;
+      b.onclick = () => open(p);
+      frag.appendChild(b);
+    }
+    shown += PAGE;
+    $("grid").appendChild(frag);
+  }
+
+  new IntersectionObserver((e) => { if (e[0].isIntersecting && shown < results.length) more(); },
+    { rootMargin: "600px" }).observe($("sentinel"));
+
+  // Dialog
+  function vars(text) {
+    const m = new Map();
+    for (const [, name, def] of text.matchAll(VAR_RE)) if (!m.has(name.trim())) m.set(name.trim(), def ?? "");
+    return m;
+  }
+  function filled() {
+    const vals = {};
+    $("dlg-vars").querySelectorAll("input").forEach((i) => (vals[i.dataset.name] = i.value));
+    return current.p.replace(VAR_RE, (all, name, def) => {
+      const v = vals[name.trim()];
+      return v ? v : (def ?? all);
+    });
+  }
+  function renderText() {
+    const vals = {};
+    $("dlg-vars").querySelectorAll("input").forEach((i) => (vals[i.dataset.name] = i.value));
+    let out = "", last = 0;
+    for (const m of current.p.matchAll(VAR_RE)) {
+      out += esc(current.p.slice(last, m.index));
+      const v = vals[m[1].trim()];
+      out += `<mark>${esc(v || m[0])}</mark>`;
+      last = m.index + m[0].length;
+    }
+    $("dlg-text").innerHTML = out + esc(current.p.slice(last));
+  }
+  function setFavBtn() {
+    const on = favs.has(current.t);
+    $("dlg-fav").textContent = on ? "★" : "☆";
+    $("dlg-fav").classList.toggle("on", on);
+  }
+  function open(p) {
+    current = p;
+    $("dlg-title").textContent = p.t;
+    $("dlg-badges").innerHTML = badges(p);
+    const v = vars(p.p);
+    $("dlg-vars").innerHTML = [...v].map(([n, d]) =>
+      `<label>${esc(n)}<input data-name="${esc(n)}" placeholder="${esc(d || n)}"></label>`).join("");
+    $("dlg-vars").hidden = v.size === 0;
+    $("dlg-vars").oninput = renderText;
+    renderText();
+    setFavBtn();
+    $("dlg-copy").textContent = "Kopieren";
+    $("dlg").showModal();
+  }
+  $("dlg-close").onclick = () => $("dlg").close();
+  $("dlg").addEventListener("click", (e) => { if (e.target === $("dlg")) $("dlg").close(); });
+  $("dlg-fav").onclick = () => {
+    favs.has(current.t) ? favs.delete(current.t) : favs.add(current.t);
+    saveFavs(); setFavBtn();
+  };
+  $("dlg").addEventListener("close", () => { if (state.favs) filter(); else refreshStars(); });
+  function refreshStars() {
+    // Sterne auf bereits gerenderten Karten aktualisieren
+    const cards = $("grid").children;
+    for (let i = 0; i < cards.length; i++) {
+      const p = results[i], h = cards[i].querySelector("h2");
+      const s = h.querySelector(".star");
+      if (favs.has(p.t) && !s) h.insertAdjacentHTML("beforeend", '<span class="star">★</span>');
+      if (!favs.has(p.t) && s) s.remove();
+    }
+  }
+  $("dlg-copy").onclick = async () => {
+    const text = filled();
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy"); ta.remove();
+    }
+    $("dlg-copy").textContent = "Kopiert ✓";
+  };
+  $("dlg-chatgpt").onclick = () => window.open("https://chatgpt.com/?q=" + encodeURIComponent(filled()), "_blank", "noopener");
+  $("dlg-claude").onclick = () => window.open("https://claude.ai/new?q=" + encodeURIComponent(filled()), "_blank", "noopener");
+
+  // Filter
+  let t;
+  $("q").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { state.q = e.target.value; filter(); }, 150); });
+  document.querySelectorAll(".chip[data-type]").forEach((c) => c.onclick = () => {
+    document.querySelectorAll(".chip[data-type]").forEach((x) => x.setAttribute("aria-pressed", x === c));
+    state.type = c.dataset.type; filter();
+  });
+  const toggle = (id, key) => $(id).onclick = () => {
+    state[key] = !state[key]; $(id).setAttribute("aria-pressed", state[key]); filter();
+  };
+  toggle("devs", "devs"); toggle("favs", "favs");
+
+  if (!all.length) $("count").textContent = "Keine Daten – data/prompts.js fehlt.";
+  else filter();
+})();
+</script>
+</body>
+</html>
